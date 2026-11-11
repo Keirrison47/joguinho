@@ -2,6 +2,136 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <title>FPS 3D Simples - Three.js</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #111; font-family: Arial, sans-serif; user-select: none; }
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      width: 16px; height: 16px;
+      border: 2px solid #00ff00; border-radius: 50%;
+      transform: translate(-50%, -50%); pointer-events: none;
+    }
+    #hud {
+      position: absolute; top: 20px; left: 20px;
+      color: #fff; font-size: 24px; font-weight: bold;
+      text-shadow: 2px 2px 4px #000;
+    }
+    #overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.75); color: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; text-align: center;
+    }
+    h1 { margin-bottom: 10px; font-size: 36px; }
+    p { font-size: 18px; color: #ccc; }
+  </style>
+</head>
+<body>
+  <div id="hud">Pontos: <span id="score">0</span></div>
+  <div id="crosshair"></div>
+  <div id="overlay">
+    <h1>CLIQUE PARA JOGAR</h1>
+    <p>WASD para mover | ESPAÇO para pular | MOUSE para mirar | CLIQUE para atirar</p>
+  </div>
+
+  <!-- Importação do Three.js via CDN -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com",
+        "three/addons/": "https://unpkg.com"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+    // 1. Cena, Câmera e Renderizador
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.Fog(0x87ceeb, 10, 80);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.y = 2;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // 2. Iluminação
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(20, 40, 20);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // 3. Chão e Cenário
+    const floorGeo = new THREE.PlaneGeometry(200, 200);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x3b7a57 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(200, 40, 0x000000, 0x224433);
+    scene.add(grid);
+
+    // 4. Arma Simples acoplada à Câmera
+    const gunGeo = new THREE.BoxGeometry(0.15, 0.15, 0.6);
+    const gunMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+    const gun = new THREE.Mesh(gunGeo, gunMat);
+    gun.position.set(0.3, -0.25, -0.5);
+    camera.add(gun);
+    scene.add(camera);
+
+    // 5. Controles de Primeira Pessoa (Pointer Lock)
+    const controls = new PointerLockControls(camera, document.body);
+    const overlay = document.getElementById('overlay');
+
+    overlay.addEventListener('click', () => controls.lock());
+    controls.addEventListener('lock', () => overlay.style.display = 'none');
+    controls.addEventListener('unlock', () => overlay.style.display = 'flex');
+
+    // Movimentação
+    const keys = { w: false, a: false, s: false, d: false };
+    let velocityY = 0;
+    let canJump = true;
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyW') keys.w = true;
+      if (e.code === 'KeyA') keys.a = true;
+      if (e.code === 'KeyS') keys.s = true;
+      if (e.code === 'KeyD') keys.d = true;
+      if (e.code === 'Space' && canJump) {
+        velocityY = 10;
+        canJump = false;
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyW') keys.w = false;
+      if (e.code === 'KeyA') keys.a = false;
+      if (e.code === 'KeyS') keys.s = false;
+      if (e.code === 'KeyD') keys.d = false;
+    });
+
+    // 6. Sistema de Alvos e Tiros
+    const targets = [];
+    const targetGeo = new THREE.BoxGeometry(2, 2, 2);
+    let score = 0;
+    const scoreEl = document.getElementById('score');
+
+    function spawnTarget() {
+      const targetMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+      const target = new THREE.Mesh(!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
   <title>Jogo de Tiro JS</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,5 +143,91 @@
   </div>
   <script src="game.js"></script>
 </body>
+</html>targetGeo, targetMat);
+      target.position.set(
+        (Math.random() - 0.5) * 60,
+        1.5 + Math.random() * 4,
+        (Math.random() - 0.5) * 60
+      );
+      target.castShadow = true;
+      scene.add(target);
+      targets.push(target);
+    }
+
+    for (let i = 0; i < 12; i++) spawnTarget();
+
+    // Raycaster para detectar acertos
+    const raycaster = new THREE.Raycaster();
+    const center = new THREE.Vector2(0, 0);
+
+    window.addEventListener('mousedown', () => {
+      if (!controls.isLocked) return;
+
+      // Recuo visual da arma
+      gun.position.z = -0.35;
+      setTimeout(() => gun.position.z = -0.5, 80);
+
+      raycaster.setFromCamera(center, camera);
+      const intersects = raycaster.intersectObjects(targets);
+
+      if (intersects.length > 0) {
+        const hitObject = intersects[0].object;
+        scene.remove(hitObject);
+        targets.splice(targets.indexOf(hitObject), 1);
+        
+        score += 10;
+        scoreEl.textContent = score;
+        spawnTarget();
+      }
+    });
+
+    // Ajuste de tela
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 7. Loop Principal de Animação
+    let prevTime = performance.now();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = performance.now();
+      const delta = (time - prevTime) / 1000;
+      prevTime = time;
+
+      if (controls.isLocked) {
+        const speed = 15 * delta;
+        if (keys.w) controls.moveForward(speed);
+        if (keys.s) controls.moveForward(-speed);
+        if (keys.a) controls.moveRight(-speed);
+        if (keys.d) controls.moveRight(speed);
+
+        // Gravidade e Pulo
+        velocityY -= 25 * delta;
+        camera.position.y += velocityY * delta;
+
+        if (camera.position.y <= 2) {
+          velocityY = 0;
+          camera.position.y = 2;
+          canJump = true;
+        }
+      }
+
+      // Rotação suave dos alvos
+      targets.forEach(t => {
+        t.rotation.y += 1.5 * delta;
+        t.rotation.x += 0.8 * delta;
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
 </html>
+
 
