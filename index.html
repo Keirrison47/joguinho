@@ -128,22 +128,7 @@
 
     function spawnTarget() {
       const targetMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-      const target = new THREE.Mesh(!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Jogo de Tiro JS</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="game-container">
-    <h1>Space Shooter JS</h1>
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
-    <p>Use as setas do teclado para mover e a barra de espaço para atirar!</p>
-  </div>
-  <script src="game.js"></script>
-</body>
-</html>targetGeo, targetMat);
+      const target = new THREE.Mesh(targetGeo, targetMat);
       target.position.set(
         (Math.random() - 0.5) * 60,
         1.5 + Math.random() * 4,
